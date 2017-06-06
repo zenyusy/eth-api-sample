@@ -57,12 +57,13 @@ class ApiNetworkError(BaseException):
 
 class ApiClient(object):
 
-    def __init__(self, appKey, appSecret, host=API_HOST):
+    def __init__(self, appKey, appSecret, assetPassword=None, host=API_HOST):
         '''
         Init api client object, by passing appKey and appSecret.
         '''
         self._accessKeyId = appKey
         self._accessKeySecret = appSecret.encode('utf-8') # change to bytes
+        self._assetPassword = assetPassword
         self._host = host
 
     def get(self, path, **params):
@@ -85,7 +86,10 @@ class ApiClient(object):
     def _call(self, method, uri, data=None):
         url = '%s://%s%s' % (SCHEME, self._host, uri)
         print(method + ' ' + url)
-        req = request.Request(url, data=data, headers=DEFAULT_GET_HEADERS if method=='GET' else DEFAULT_POST_HEADERS, method=method)
+        headers = DEFAULT_GET_HEADERS if method=='GET' else DEFAULT_POST_HEADERS
+        if self._assetPassword:
+            headers['AuthData'] = self._auth_data()
+        req = request.Request(url, data=data, headers=headers, method=method)
         with request.urlopen(req, timeout=TIMEOUT) as resp:
             if resp.getcode()!=200:
                 raise ApiNetworkError('Bad response code: %s %s' % (resp.getcode(), resp.reason))
@@ -119,6 +123,13 @@ class ApiClient(object):
         # print('sign: ' + sig)
         qs = qs + '&Signature=' + sig
         return qs
+
+    def _auth_data(self):
+        md5 = hashlib.md5()
+        md5.update(self._assetPassword.encode('utf-8'))
+        md5.update('hello, moto'.encode('utf-8'))
+        s = json.dumps({"assetPwd": md5.hexdigest()})
+        return self._encode(s)
 
     def _utc(self):
         return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
