@@ -88,7 +88,7 @@ class ApiClient(object):
         print(method + ' ' + url)
         headers = DEFAULT_GET_HEADERS if method=='GET' else DEFAULT_POST_HEADERS
         if self._assetPassword:
-            headers.update({'AuthData': self._auth_data()})
+            headers['AuthData'] = self._auth_data()
         req = request.Request(url, data=data, headers=headers, method=method)
         with request.urlopen(req, timeout=TIMEOUT) as resp:
             if resp.getcode()!=200:
