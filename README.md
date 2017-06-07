@@ -4,6 +4,7 @@ REST api代码示例包括:
 
 * Java 1.8
 * Python 3.x
+* PHP 5.6.30 (感谢用户Yozo的贡献)
 * C# 7（感谢用户Mr.Qian的贡献）
 
 WebSocket api代码示例包括：
