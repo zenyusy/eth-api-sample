@@ -179,10 +179,10 @@ public class ApiClient {
     try {
       md = MessageDigest.getInstance("MD5");
     } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException("No such algorithm: " + e.getMessage());
+      throw new RuntimeException(e);
     }
-    md.update(this.assetPassword.getBytes());
-    md.update("hello, moto".getBytes());
+    md.update(this.assetPassword.getBytes(StandardCharsets.UTF_8));
+    md.update("hello, moto".getBytes(StandardCharsets.UTF_8));
     Map<String, String> map = new HashMap<>();
     map.put("assetPwd", DatatypeConverter.printHexBinary(md.digest()).toLowerCase());
     try {
