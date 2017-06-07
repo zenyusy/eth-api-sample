@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.xml.bind.DatatypeConverter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +63,7 @@ public class ApiClient {
 
   final String accessKeyId;
   final String accessKeySecret;
+  final String assetPassword;
 
   /**
    * 创建一个ApiClient实例
@@ -71,6 +74,20 @@ public class ApiClient {
   public ApiClient(String accessKeyId, String accessKeySecret) {
     this.accessKeyId = accessKeyId;
     this.accessKeySecret = accessKeySecret;
+    this.assetPassword = null;
+  }
+
+  /**
+   * 创建一个ApiClient实例
+   * 
+   * @param accessKeyId AccessKeyId
+   * @param accessKeySecret AccessKeySecret
+   * @param assetPassword AssetPassword
+   */
+  public ApiClient(String accessKeyId, String accessKeySecret, String assetPassword) {
+    this.accessKeyId = accessKeyId;
+    this.accessKeySecret = accessKeySecret;
+    this.assetPassword = assetPassword;
   }
 
   /**
@@ -138,20 +155,40 @@ public class ApiClient {
     ApiSignature sign = new ApiSignature();
     sign.createSignature(this.accessKeyId, this.accessKeySecret, method, API_HOST, uri, params);
     try {
-      Request request = null;
+      Request.Builder builder = null;
       if ("POST".equals(method)) {
         RequestBody body = RequestBody.create(JSON, JsonUtil.writeValue(object));
-        request = new Request.Builder().url(API_URL + uri + "?" + toQueryString(params)).post(body)
-            .build();
+        builder = new Request.Builder().url(API_URL + uri + "?" + toQueryString(params)).post(body);
       } else {
-        request =
-            new Request.Builder().url(API_URL + uri + "?" + toQueryString(params)).get().build();
+        builder = new Request.Builder().url(API_URL + uri + "?" + toQueryString(params)).get();
       }
+      if (this.assetPassword != null) {
+        builder.addHeader("AuthData", authData());
+      }
+      Request request = builder.build();
       Response response = client.newCall(request).execute();
       String s = response.body().string();
       return JsonUtil.readValue(s, ref);
     } catch (IOException e) {
       throw new ApiException(e);
+    }
+  }
+
+  String authData() {
+    MessageDigest md = null;
+    try {
+      md = MessageDigest.getInstance("MD5");
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
+    md.update(this.assetPassword.getBytes(StandardCharsets.UTF_8));
+    md.update("hello, moto".getBytes(StandardCharsets.UTF_8));
+    Map<String, String> map = new HashMap<>();
+    map.put("assetPwd", DatatypeConverter.printHexBinary(md.digest()).toLowerCase());
+    try {
+      return ApiSignature.urlEncode(JsonUtil.writeValue(map));
+    } catch (IOException e) {
+      throw new RuntimeException("Get json failed: " + e.getMessage());
     }
   }
 
