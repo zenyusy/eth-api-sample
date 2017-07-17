@@ -1,4 +1,4 @@
-# ETH API 代码示例
+# 新REST行情、交易API(ETH、ETC) 代码示例
 
 REST api代码示例包括:
 
