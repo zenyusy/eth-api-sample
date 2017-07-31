@@ -136,13 +136,10 @@ class ApiClient(object):
         # create signature:
         if params is None:
             params = {}
-        params['SignatureMethod'] = 'HmacSHA256'
-        params['SignatureVersion'] = '2'
-        params['AccessKeyId'] = self._accessKeyId
-        params['Timestamp'] = ts
-
+        # sort by key:
+        keys = sorted(params.keys())
         # build query string like: a=1&b=%20&c=:
-        qs = '&'.join(['%s=%s' % (key, self._encode(params[key])) for key in params.keys()])
+        qs = '&'.join(['%s=%s' % (key, self._encode(params[key])) for key in keys])
         return qs
 
     def _auth_data(self):
