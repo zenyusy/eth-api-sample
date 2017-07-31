@@ -65,13 +65,6 @@ class ApiClient(object):
         self._accessKeySecret = appSecret.encode('utf-8') # change to bytes
         self._assetPassword = assetPassword
         self._host = host
-
-    def get_nosign(self, path, **params):
-        '''
-        Send a http get request and return json object.
-        '''
-        qs = self._nosign('GET', path, self._utc(), params)
-        return self._call('GET', '%s?%s' % (path, qs))
     
     def get(self, path, **params):
         '''
@@ -129,17 +122,6 @@ class ApiClient(object):
         sig = self._encode(base64.b64encode(dig).decode())
         # print('sign: ' + sig)
         qs = qs + '&Signature=' + sig
-        return qs
-    
-    def _nosign(self, method, path, ts, params=None):
-        self._method = method
-        # create signature:
-        if params is None:
-            params = {}
-        # sort by key:
-        keys = sorted(params.keys())
-        # build query string like: a=1&b=%20&c=:
-        qs = '&'.join(['%s=%s' % (key, self._encode(params[key])) for key in keys])
         return qs
 
     def _auth_data(self):
