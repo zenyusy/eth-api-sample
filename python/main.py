@@ -3,7 +3,7 @@
 
 import time
 
-from hbsdk import ApiClient, ApiError
+from hbsdk import ApiClient
 
 API_KEY = 'your-api-key'
 API_SECRET = 'your-api-secret'

@@ -32,22 +32,9 @@ DEFAULT_POST_HEADERS = {
     'Accept-Language': LANG
 }
 
-class Dict(dict):
-
-    def __init__(self, **kw):
-        super().__init__(**kw)
-
-    def __getattr__(self, key):
-        try:
-            return self[key]
-        except KeyError:
-            raise AttributeError(r"'Dict' object has no attribute '%s'" % key)
-
-    def __setattr__(self, key, value):
-        self[key] = value
-
-def _toDict(d):
-    return Dict(**d)
+class DotDict(dict):
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
 
 class ApiError(BaseException):
     pass
@@ -65,7 +52,7 @@ class ApiClient(object):
         self._accessKeySecret = appSecret.encode('utf-8') # change to bytes
         self._assetPassword = assetPassword
         self._host = host
-    
+
     def get(self, path, **params):
         '''
         Send a http get request and return json object.
@@ -97,7 +84,7 @@ class ApiClient(object):
 
     def _parse(self, text):
         # print('Response:\n%s' % text)
-        result = json.loads(text, object_hook=_toDict)
+        result = json.loads(text.decode('utf-8'), object_hook=DotDict)
         if result.status=='ok':
             return result.data
         raise ApiError('%s: %s' % (result['err-code'], result['err-msg']))
